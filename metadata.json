@@ -1,0 +1,6 @@
+{
+  "name": "Premium Digital Product Marketplace",
+  "description": "A world-class luxury digital product marketplace featuring premium digital downloads, custom payments, auto-delivery, and full admin analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

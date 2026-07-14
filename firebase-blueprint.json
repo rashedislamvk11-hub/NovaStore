@@ -1,0 +1,148 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Premium digital product description",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "features": { "type": "array" },
+        "price": { "type": "number" },
+        "salePrice": { "type": "number" },
+        "category": { "type": "string" },
+        "image": { "type": "string" },
+        "gallery": { "type": "array" },
+        "downloadLink": { "type": "string" },
+        "tags": { "type": "array" },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "isFeatured": { "type": "boolean" },
+        "isNewArrival": { "type": "boolean" },
+        "isBestSeller": { "type": "boolean" }
+      },
+      "required": ["id", "name", "price"]
+    },
+    "WebsiteSettings": {
+      "title": "WebsiteSettings",
+      "description": "General website branding and settings",
+      "type": "object",
+      "properties": {
+        "websiteName": { "type": "string" },
+        "websiteLogo": { "type": "string" },
+        "contactNumber": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "socialFacebook": { "type": "string" },
+        "socialTwitter": { "type": "string" },
+        "socialInstagram": { "type": "string" },
+        "footerContent": { "type": "string" },
+        "seoTitle": { "type": "string" },
+        "seoDescription": { "type": "string" }
+      }
+    },
+    "PaymentSettings": {
+      "title": "PaymentSettings",
+      "description": "Bkash, Nagad, Rocket numbers and instructions",
+      "type": "object",
+      "properties": {
+        "bkashNumber": { "type": "string" },
+        "bkashImage": { "type": "string" },
+        "nagadNumber": { "type": "string" },
+        "nagadImage": { "type": "string" },
+        "rocketNumber": { "type": "string" },
+        "rocketImage": { "type": "string" }
+      }
+    },
+    "BannerSettings": {
+      "title": "BannerSettings",
+      "description": "Banner video, slideshow, and text configs",
+      "type": "object",
+      "properties": {
+        "videoBannerUrl": { "type": "string" },
+        "sliderImages": { "type": "array" },
+        "lottieAnimationUrl": { "type": "string" },
+        "headline": { "type": "string" },
+        "subheadline": { "type": "string" },
+        "ctaText": { "type": "string" }
+      }
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Purchase transaction document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "productPrice": { "type": "number" },
+        "bkashSender": { "type": "string" },
+        "nagadSender": { "type": "string" },
+        "rocketSender": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "paymentScreenshot": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "downloadInstructions": { "type": "string" },
+        "downloadLink": { "type": "string" }
+      }
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Product review",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Custom registered user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "role": { "type": "string" },
+        "blocked": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Store premium products list"
+    },
+    "settings/{settingId}": {
+      "schema": "object",
+      "description": "Store global configuration settings: general, payment, banner"
+    },
+    "orders/{orderId}": {
+      "schema": "Order",
+      "description": "Store customer checkout acquisitions"
+    },
+    "reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Store product reviews"
+    },
+    "users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Store registered user profiles"
+    }
+  }
+}
