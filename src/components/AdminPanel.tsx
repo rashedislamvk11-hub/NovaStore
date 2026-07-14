@@ -52,7 +52,7 @@ interface AdminPanelProps {
   paymentSettings: PaymentSettings;
   bannerSettings: BannerSettings;
   
-  onSaveProduct: (p: Product) => void;
+  onSaveProduct: (p: Product) => Promise<void> | void;
   onDeleteProduct: (id: string) => void;
   onUpdateOrderStatus: (orderId: string, status: Order['status'], downloadLink?: string) => void;
   onDeleteOrder: (orderId: string) => void;
@@ -104,7 +104,7 @@ export default function AdminPanel({
     try {
       await onLogin(adminEmail.trim(), 'admin', adminPassword);
     } catch (err: any) {
-      setLoginError("লগইন ব্যর্থ হয়েছে। সঠিক তথ্য প্রদান করুন।");
+      setLoginError(err.message || "লগইন ব্যর্থ হয়েছে। সঠিক তথ্য প্রদান করুন।");
     } finally {
       setIsLoggingIn(false);
     }
@@ -117,7 +117,10 @@ export default function AdminPanel({
   const [prodDesc, setProdDesc] = React.useState("");
   const [prodPrice, setProdPrice] = React.useState(0);
   const [prodSalePrice, setProdSalePrice] = React.useState(0);
-  const [prodCategory, setProdCategory] = React.useState("");
+  const [prodCategory, setProdCategory] = React.useState("UI Templates");
+  const [customCategory, setCustomCategory] = React.useState("");
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [saveError, setSaveError] = React.useState("");
   const [prodImage, setProdImage] = React.useState("");
   const [prodGallery, setProdGallery] = React.useState<string[]>([]);
   const [prodDemoVideo, setProdDemoVideo] = React.useState("");
@@ -190,29 +193,44 @@ export default function AdminPanel({
     setCustomBannerSettings({ ...bannerSettings });
   }, [websiteSettings, paymentSettings, bannerSettings]);
 
-  const handleSaveProductForm = (e: React.FormEvent) => {
+  const handleSaveProductForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newProd: Product = {
-      id: editingProduct?.id || `prod-${Date.now()}`,
-      name: prodName,
-      description: prodDesc,
-      features: prodFeatures,
-      price: Number(prodPrice),
-      salePrice: Number(prodSalePrice),
-      category: prodCategory,
-      image: prodImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71",
-      gallery: prodGallery.length > 0 ? prodGallery : [prodImage],
-      demoVideo: prodDemoVideo,
-      downloadLink: prodDownload,
-      tags: prodTags,
-      rating: editingProduct?.rating || 5.0,
-      reviewCount: editingProduct?.reviewCount || 0,
-      isFeatured: editingProduct?.isFeatured || false,
-      isNewArrival: editingProduct?.isNewArrival || true,
-      isBestSeller: editingProduct?.isBestSeller || false
-    };
-    onSaveProduct(newProd);
-    resetProductForm();
+    setIsSaving(true);
+    setSaveError("");
+    try {
+      const finalCategory = prodCategory === "Custom" ? customCategory.trim() : prodCategory;
+      if (!finalCategory) {
+        throw new Error("অনুগ্রহ করে একটি প্রোডাক্ট ক্যাটাগরি নির্ধারণ করুন।");
+      }
+
+      const newProd: Product = {
+        id: editingProduct?.id || `prod-${Date.now()}`,
+        name: prodName,
+        description: prodDesc,
+        features: prodFeatures,
+        price: Number(prodPrice),
+        salePrice: Number(prodSalePrice),
+        category: finalCategory,
+        image: prodImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71",
+        gallery: prodGallery.length > 0 ? prodGallery : [prodImage],
+        demoVideo: prodDemoVideo,
+        downloadLink: prodDownload,
+        tags: prodTags,
+        rating: editingProduct?.rating || 5.0,
+        reviewCount: editingProduct?.reviewCount || 0,
+        isFeatured: editingProduct?.isFeatured || false,
+        isNewArrival: editingProduct?.isNewArrival || true,
+        isBestSeller: editingProduct?.isBestSeller || false
+      };
+      
+      await onSaveProduct(newProd);
+      resetProductForm();
+    } catch (err: any) {
+      console.error("Product save failed: ", err);
+      setSaveError(err.message || "প্রোডাক্ট পাবলিশ করা সম্ভব হয়নি। অনুগ্রহ করে ডেটাবেস সংযোগ পরীক্ষা করুন এবং আবার চেষ্টা করুন।");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const startEditProduct = (p: Product) => {
@@ -222,7 +240,16 @@ export default function AdminPanel({
     setProdDesc(p.description);
     setProdPrice(p.price);
     setProdSalePrice(p.salePrice);
-    setProdCategory(p.category);
+    
+    const defaultCats = ["UI Templates", "Websites", "Photography", "Audio & Music", "Templates"];
+    if (defaultCats.includes(p.category)) {
+      setProdCategory(p.category);
+      setCustomCategory("");
+    } else {
+      setProdCategory("Custom");
+      setCustomCategory(p.category);
+    }
+
     setProdImage(p.image);
     setProdGallery(p.gallery);
     setProdDemoVideo(p.demoVideo || "");
@@ -238,13 +265,15 @@ export default function AdminPanel({
     setProdDesc("");
     setProdPrice(0);
     setProdSalePrice(0);
-    setProdCategory("");
+    setProdCategory("UI Templates");
+    setCustomCategory("");
     setProdImage("");
     setProdGallery([]);
     setProdDemoVideo("");
     setProdDownload("");
     setProdTags([]);
     setProdFeatures([]);
+    setSaveError("");
   };
 
   const handleAddTag = () => {
@@ -559,15 +588,32 @@ export default function AdminPanel({
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-400 mb-2">ডিজিটাল ক্যাটাগরি</label>
-                  <input
+                  <select
                     id="form-product-category"
-                    type="text"
                     value={prodCategory}
                     onChange={(e) => setProdCategory(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-white/10 text-slate-200 focus:outline-none focus:border-red-500 text-sm"
-                    placeholder="যেমন: UI Templates, Photography, Audio..."
                     required
-                  />
+                  >
+                    <option value="UI Templates">UI Templates</option>
+                    <option value="Websites">Websites</option>
+                    <option value="Photography">Photography</option>
+                    <option value="Audio & Music">Audio & Music</option>
+                    <option value="Templates">Templates</option>
+                    <option value="Custom">Other / অন্যান্য ক্যাটাগরি...</option>
+                  </select>
+
+                  {prodCategory === "Custom" && (
+                    <input
+                      id="form-product-category-custom"
+                      type="text"
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      className="w-full mt-2 px-4 py-3 rounded-xl bg-slate-900 border border-white/10 text-slate-200 focus:outline-none focus:border-red-500 text-sm animate-fade-in"
+                      placeholder="কাস্টম ক্যাটাগরির নাম লিখুন..."
+                      required
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -642,19 +688,35 @@ export default function AdminPanel({
                 </div>
               </div>
 
+              {saveError && (
+                <div className="flex items-center space-x-2 text-red-400 bg-red-500/10 p-3.5 rounded-xl border border-red-500/20 text-xs mt-4">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{saveError}</span>
+                </div>
+              )}
+
               <div className="flex space-x-3 justify-end pt-4 border-t border-white/5">
                 <button 
                   type="button" 
                   onClick={resetProductForm}
-                  className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300"
+                  disabled={isSaving}
+                  className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold uppercase text-slate-300 disabled:opacity-50"
                 >
                   বাতিল করুন
                 </button>
                 <button 
                   type="submit"
-                  className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold uppercase shadow-lg"
+                  disabled={isSaving}
+                  className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold uppercase shadow-lg disabled:opacity-50 flex items-center space-x-2"
                 >
-                  {editingProduct ? "পরিবর্তন সংরক্ষণ করুন" : "প্রোডাক্ট পাবলিশ করুন"}
+                  {isSaving ? (
+                    <>
+                      <span className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent" />
+                      <span>প্রক্রিয়াধীন...</span>
+                    </>
+                  ) : (
+                    <span>{editingProduct ? "পরিবর্তন সংরক্ষণ করুন" : "প্রোডাক্ট পাবলিশ করুন"}</span>
+                  )}
                 </button>
               </div>
             </form>
